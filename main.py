@@ -8,18 +8,81 @@ def authenticate():
     toauth = OAuth1Session(ak.AP, ak.APS, ak.AT, ak.ATS)
     return toauth
 
+def is_number(s):
+    try:
+        int(s)
+        return True
+    except ValueaError:
+        return False
+
+def retweet(action, timeline, toauth):
+    uri = 'https://api.twitter.com/1.1/statuses/retweet/'
+    for target in action[1:]:
+        if(is_number(target)):
+            tgt = int(target) - 1
+        else:
+            print(tgt, 'is an invalid input')
+            continue
+
+        if tgt> len(timeline):
+            print(target, ' is bigger than retrived timeline')
+        else:
+            uri2 = uri + timeline[tgt]['id_str'] + '.json'
+            req = toauth.post(uri2, params = {'id': timeline[tgt]['id_str']})
+            if req.status_code == 200:
+                print("== retweeted ==")
+            else:
+                print("== !!Could not retweet!! ==")
+            print(timeline[tgt]['text'])
+    return
+
+def unretweet(action, timeline, toauth):
+    uri = 'https://api.twitter.com/1.1/statuses/unretweet/'
+    for target in action[1:]:
+        if(is_number(target)):
+            tgt = int(target) - 1
+        else:
+            print(tgt, 'is an invalid input')
+            continue
+        if tgt> len(timeline):
+            print(target, ' is bigger than retrived timeline')
+        else:
+            uri2 = uri + timeline[tgt]['id_str'] + '.json'
+            req = toauth.post(uri2, params = {'id': timeline[tgt]['id_str']})
+            if req.status_code == 200:
+                print("== unretweeted ==")
+            else:
+                print("== !!Could not unretweet!! ==")
+            print('== ', timeline[tgt]['user']['name'],' (' , timeline[tgt]['created_at'] , ')')
+            print(timeline[tgt]['text'])
+            print('-------------------')
+    return
+
 def tl():
+    # action_list = {'retweet':retweet, 'unretweet':unretweet, 'favorite': favorite, 'unfavorite': unfavorite}
+    action_list = {'retweet':retweet, 'unretweet':unretweet}
     uri = "https://api.twitter.com/1.1/statuses/home_timeline.json"
     toauth = authenticate()
     params = {}
     req = toauth.get(uri, params = params)
     if req.status_code == 200:
         timeline = json.loads(req.text)
-        for tweet in timeline:
-            print('== ', tweet['user']['name'],' (' , tweet['created_at'] , ')')
+        for i, tweet in enumerate(timeline, 1):
+            print(i, '== ', tweet['user']['name'],' (' , tweet['created_at'] , ')')
             print(tweet['text'])
-            print('retweets : ', tweet['retweet_count'])
+            print('retweets : ', tweet['retweet_count'], '[', 'v' if tweet['retweeted'] else ' ', ']')
+            print('favorites: ', tweet['favorite_count'], '[','v' if tweet['favorited'] else ' ', ']')
             print('------------------')
+        while True:
+            action = input("actions(q to exit) >")
+            action = action.split(' ')
+            if action[0] == 'quit' or action[0] == 'q':
+                return
+            else:
+                if action[0] in action_list:
+                    action_list[action[0]](action, timeline, toauth)
+                else:
+                    print("Action does not exist")
     else:
         print ("Error: %d" % req.status_code)
     # print("called tl")
@@ -50,7 +113,7 @@ def help():
     print("currently no options")
 
 def main():
-    commands = {"tl": tl, "post": post , "help": help}
+    commands = {"tl": tl, "timeline": tl, "post": post, "help": help}
     argv = sys.argv
     argc = len(argv)
     if argc < 2:
