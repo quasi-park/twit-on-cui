@@ -58,9 +58,49 @@ def unretweet(action, timeline, toauth):
             print('-------------------')
     return
 
+def favorite(action, timeline, toauth):
+    uri = 'https://api.twitter.com/1.1/favorites/create.json'
+    for target in action[1:]:
+        if(is_number(target)):
+            tgt = int(target) - 1
+        else:
+            print(tgt, 'is an invalid input')
+            continue
+
+        if tgt> len(timeline):
+            print(target, ' is bigger than retrived timeline')
+        else:
+            req = toauth.post(uri, params = {'id': timeline[tgt]['id_str']})
+            if req.status_code == 200:
+                print("== favorited ==")
+            else:
+                print("== !!Could not favorite!! ==")
+            print(timeline[tgt]['text'])
+    return
+
+def unfavorite(action, timeline, toauth):
+    uri = 'https://api.twitter.com/1.1/favorites/destroy.json'
+    for target in action[1:]:
+        if(is_number(target)):
+            tgt = int(target) - 1
+        else:
+            print(tgt, 'is an invalid input')
+            continue
+        if tgt> len(timeline):
+            print(target, ' is bigger than retrived timeline')
+        else:
+            req = toauth.post(uri, params = {'id': timeline[tgt]['id_str']})
+            if req.status_code == 200:
+                print("== unfavorited ==")
+            else:
+                print("== !!Could not unfavorite!! ==")
+            print('== ', timeline[tgt]['user']['name'],' (' , timeline[tgt]['created_at'] , ')')
+            print(timeline[tgt]['text'])
+            print('-------------------')
+    return
+
 def tl():
-    # action_list = {'retweet':retweet, 'unretweet':unretweet, 'favorite': favorite, 'unfavorite': unfavorite}
-    action_list = {'retweet':retweet, 'unretweet':unretweet}
+    action_list = {'retweet':retweet, 'rt': retweet, 'unretweet':unretweet, 'urt': unretweet, 'favorite': favorite, 'unfavorite': unfavorite}
     uri = "https://api.twitter.com/1.1/statuses/home_timeline.json"
     toauth = authenticate()
     params = {}
